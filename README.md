@@ -74,3 +74,64 @@ Feel free to open an issue or submit a pull request.
 
 Built by **John (DarDwizzle)**  
 Powered by curiosity, caffeine, and the desire to make Windows behave.
+
+-----------------------------------------------------------------------
+
+## Planned Features (v1.1.0)
+
+### **Verbose Mode (`-Verbose`)**
+Provides detailed output for transparency and debugging.
+
+**Verbose output will include:**
+- Which orphaned handles were detected  
+- Which processes were terminated  
+- Which processes were skipped  
+- Which processes were protected  
+- Any errors or access-denied events  
+
+---
+
+### **CSV Export (`-ExportCSV <path>`)**
+Allows exporting the full verbose report to a `.csv` file for analysis.
+
+**CSV fields will include:**
+- Timestamp  
+- Process name  
+- PID  
+- Process group (Chrome, Edge, WebView2)  
+- Action taken (Killed, Skipped, Protected)  
+- Reason (Orphaned, User-excluded, System-protected)  
+
+Example:
+```KillOrphaned.exe -Verbose -ExportCSV "C:\Logs\KillReport.csv"```
+
+
+---
+
+### **Advanced Process Group Selection (Hidden Feature)**
+This is an **advanced** and **dangerous** feature intended only for power users.
+
+It will be hidden behind an **“Advanced Options”** toggle with a warning:
+
+> “These options are intended for advanced users.  
+> Killing WebView2 processes may cause Chrome or Edge to lose active sessions.”
+
+**Selectable process groups:**
+- Chrome  
+- Edge  
+- WebView2  
+
+**Example use case:**
+- System is sluggish  
+- Chrome has sleeping tabs the user wants to keep  
+- User wants to kill only Edge + WebView2 orphaned processes  
+
+**Example CLI:**
+```KillOrphaned.exe -Advanced -Kill Edge,WebView2```
+
+**Example GUI behavior:**
+[ ] Chrome
+[x] Edge
+[x] WebView2
+
+Default behavior remains unchanged unless Advanced Options is explicitly enabled.

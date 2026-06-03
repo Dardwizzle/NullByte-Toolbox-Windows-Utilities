@@ -8,3 +8,4 @@ All notable changes to this project will be documented in this file.
 - Included Nullbyte.png and NullByteOrphans1.ico
 - Added README with usage instructions
 - Added MIT License
+- Added .gitignore to keep repository clean

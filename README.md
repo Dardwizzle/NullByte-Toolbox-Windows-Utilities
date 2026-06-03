@@ -135,3 +135,7 @@ It will be hidden behind an **“Advanced Options”** toggle with a warning:
 [x] WebView2
 
 Default behavior remains unchanged unless Advanced Options is explicitly enabled.
+
+---------------------------------------------------------------------------
+For long‑term plans and upcoming utilities, see the full [NullByte Toolbox Roadmap](ROADMAP.md).
+

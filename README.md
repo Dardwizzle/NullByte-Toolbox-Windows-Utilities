@@ -1,5 +1,7 @@
 # NullByte Toolbox – Windows Utilities Collection
 
+[![Download](https://img.shields.io/github/v/release/Dardwizzle/NullByte-Toolbox-Windows-Utilities?label=Download%20Latest&style=for-the-badge)](https://github.com/Dardwizzle/NullByte-Toolbox-Windows-Utilities/releases/latest)
+
 A growing collection of Windows utilities designed to improve daily workflow, automate repetitive tasks, and provide fast access to common system functions.
 
 This toolbox is built and maintained by **John (DarDwizzle)** and is intended as a personal utility suite that will expand over time.

@@ -1,31 +1,55 @@
+# --- START CHUNK 1 ---
+<#
+    KillOrphaned.ps1
+    Version: 1.1.0
+    Author: John + NullByte Systems
+    Description:
+        Enhanced version of the KillOrphaned utility with:
+        - Normal window (1024x768)
+        - Resizable UI
+        - NullByte mascot centered above warning text
+        - Memory before/after reporting
+        - Detailed process capture (MemoryMB, CPUSeconds, StartTime, Path, ParentPID)
+        - Table-style results display
+        - CSV export via "Copy All" button
+#>
+
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms
+# --- END CHUNK 1 ---
+# --- START CHUNK 2 ---
+# Reliable EXE/script directory detection
+# Determine script directory correctly for both PS1 and EXE
+if ($MyInvocation.MyCommand.Path) {
+    # Running as a PS1 script
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+} else {
+    # Running as a compiled EXE
+    $ScriptDir = Split-Path -Parent ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
+}
 
-# Get script folder and image path
-#$ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
-#$NullByteImage = Join-Path $ScriptDir 'NullByte.png'
-
-#if (-not (Test-Path $NullByteImage)) {
-#    [System.Windows.MessageBox]::Show("NullByte.png not found in:`n$ScriptDir","Missing Image",[System.Windows.MessageBoxButton]::OK,[System.Windows.MessageBoxImage]::Error) | Out-Null
-#    exit
-#}
-
-# Reliable EXE directory detection
-$ScriptDir = Split-Path -Parent ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 $NullByteImage = Join-Path $ScriptDir 'NullByte.png'
 
 if (-not (Test-Path $NullByteImage)) {
-    [System.Windows.MessageBox]::Show("NullByte.png not found in:`n$ScriptDir","Missing Image",[System.Windows.MessageBoxButton]::OK,[System.Windows.MessageBoxImage]::Error) | Out-Null
-        exit
-        }
-
-# Create main window
+    [System.Windows.MessageBox]::Show(
+        "NullByte.png not found in:`n$ScriptDir",
+        "Missing Image",
+        [System.Windows.MessageBoxButton]::OK,
+        [System.Windows.MessageBoxImage]::Error
+    ) | Out-Null
+    exit
+}
+# --- END CHUNK 2 ---
+# --- START CHUNK 3 ---
+# Create main window (normal window, not fullscreen)
 $window                 = New-Object System.Windows.Window
-$window.WindowStyle     = 'None'
-$window.WindowState     = 'Maximized'
-$window.ResizeMode      = 'NoResize'
-$window.Background      = 'Black'
-$window.Topmost         = $true
 $window.Title           = 'NullByte Purge'
+$window.Width           = 1024
+$window.Height          = 768
+$window.WindowStartupLocation = 'CenterScreen'
+$window.ResizeMode      = 'CanResize'
+$window.WindowStyle     = 'SingleBorderWindow'
+$window.Topmost         = $false
+$window.Background      = 'Black'
 
 # Root grid
 $grid = New-Object System.Windows.Controls.Grid
@@ -37,13 +61,13 @@ $grid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | O
 $grid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null  # Text
 $grid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null  # Buttons
 
-# ====== IMAGE (CENTERED) ======
+# ====== IMAGE (CENTERED ABOVE TEXT) ======
 $image = New-Object System.Windows.Controls.Image
 $image.HorizontalAlignment = 'Center'
 $image.VerticalAlignment   = 'Center'
 $image.Stretch             = 'Uniform'
-$image.MaxHeight           = 400
-$image.MaxWidth            = 400
+$image.MaxHeight           = 300
+$image.MaxWidth            = 300
 
 $bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
 $bitmap.BeginInit()
@@ -54,10 +78,12 @@ $image.Source = $bitmap
 
 [System.Windows.Controls.Grid]::SetRow($image,0)
 $grid.Children.Add($image) | Out-Null
-
+# --- END CHUNK 3 ---
+# --- START CHUNK 4 ---
 # ====== WARNING TEXT ======
 $warningText = @"
 *WARNING*
+**Must read and scroll to the end of this block to continue**
 
 By clicking ""I Understand the Risks,"" all of your Active and Orphaned
 MSEdge and Chrome sessions will be NUKED!
@@ -69,7 +95,7 @@ In other words: SAVE YOUR WORK NOW.
 
 All Edge and Chrome tabs and windows will be closed. There is no going back.
 
-You may click ""Cancel"" at any time to return to your desktop, and the destructive app will be terminated.
+You may click ""Cancel"" at any time to return to your desktop, and this destructive app will be terminated.
 "@
 
 $textBlock = New-Object System.Windows.Controls.TextBlock
@@ -82,16 +108,34 @@ $textBlock.VerticalAlignment   = 'Top'
 $textBlock.Margin              = '40,10,40,10'
 $textBlock.TextWrapping        = 'Wrap'
 
-[System.Windows.Controls.Grid]::SetRow($textBlock,1)
-$grid.Children.Add($textBlock) | Out-Null
+# Scrollable container for warning text
+$scrollViewer = New-Object System.Windows.Controls.ScrollViewer
+$scrollViewer.Content                     = $textBlock
+$scrollViewer.VerticalScrollBarVisibility = 'Auto'
+$scrollViewer.HorizontalScrollBarVisibility = 'Disabled'
+$scrollViewer.Margin                      = '20,10,20,10'
 
+[System.Windows.Controls.Grid]::SetRow($scrollViewer,1)
+$grid.Children.Add($scrollViewer) | Out-Null
+
+# Unlock "I Understand the Risks" only when scrolled to bottom
+$scrollViewer.Add_ScrollChanged({
+    if ($scrollViewer.ScrollableHeight -gt 0 -and
+        $scrollViewer.VerticalOffset -ge $scrollViewer.ScrollableHeight) {
+
+        if ($Global:btnUnderstand -ne $null) {
+            $Global:btnUnderstand.IsEnabled = $true
+        }
+    }
+})
+# --- END CHUNK 4 ---
+# --- START CHUNK 5 ---
 # ====== BUTTON PANEL ======
 $buttonPanel = New-Object System.Windows.Controls.StackPanel
-$buttonPanel.Orientation        = 'Horizontal'
+$buttonPanel.Orientation         = 'Horizontal'
 $buttonPanel.HorizontalAlignment = 'Center'
 $buttonPanel.VerticalAlignment   = 'Center'
 $buttonPanel.Margin              = '0,20,0,0'
-#$buttonPanel.Spacing             = 20
 
 [System.Windows.Controls.Grid]::SetRow($buttonPanel,2)
 $grid.Children.Add($buttonPanel) | Out-Null
@@ -106,7 +150,7 @@ $btnCancel.Background          = 'Gray'
 $btnCancel.Foreground          = 'White'
 $btnCancel.Margin              = '10'
 
-# I Understand button
+# I Understand button (initially disabled until user scrolls to bottom)
 $btnUnderstand = New-Object System.Windows.Controls.Button
 $btnUnderstand.Content         = 'I Understand the Risks'
 $btnUnderstand.Width           = 260
@@ -115,143 +159,257 @@ $btnUnderstand.FontSize        = 16
 $btnUnderstand.Background      = 'DarkRed'
 $btnUnderstand.Foreground      = 'White'
 $btnUnderstand.Margin          = '10'
+$btnUnderstand.IsEnabled       = $false
+
+# Expose globally so Chunk 4's scroll handler can enable it
+$Global:btnUnderstand = $btnUnderstand
 
 $buttonPanel.Children.Add($btnCancel)      | Out-Null
 $buttonPanel.Children.Add($btnUnderstand)  | Out-Null
+# --- END CHUNK 5 ---
+# --- START CHUNK 6 ---
+# ====== PROCESS ENUMERATION + KILL LOGIC ======
 
-# ====== KILL LOGIC ======
-function Invoke-NullByteKill {
-    $killed = @()
+function Get-ProcessDetails {
+    param($proc)
 
-    $targets = @(
-        'msedge',
-        'msedgewebview2',
-        'chrome'
-    )
+    # Safely capture details (some processes may block certain properties)
+    $path = $null
+    try { $path = $proc.Path } catch {}
 
+    $parent = $null
+    try {
+        $parent = (Get-CimInstance Win32_Process -Filter "ProcessId = $($proc.Id)").ParentProcessId
+    } catch {}
+
+    return [PSCustomObject]@{
+        ProcessName = $proc.ProcessName
+        PID         = $proc.Id
+        MemoryMB    = [math]::Round(($proc.WorkingSet64 / 1MB),2)
+        CPUSeconds  = $proc.CPU
+        StartTime   = $proc.StartTime
+        Path        = $path
+        ParentPID   = $parent
+    }
+}
+
+function Get-SystemMemoryUsageMB {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $used = ($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / 1024
+    return [math]::Round($used,2)
+}
+
+# Storage for results
+$Global:ProcessResults = @()
+$Global:BeforeMemoryMB = 0
+$Global:AfterMemoryMB  = 0
+# --- END CHUNK 6 ---
+# --- START CHUNK 7 ---
+# Kill routine
+function Invoke-Nuke {
+
+    # Capture memory BEFORE
+    $Global:BeforeMemoryMB = Get-SystemMemoryUsageMB
+
+    # Target processes
+    $targets = @("msedge","chrome")
+
+    # Take a snapshot BEFORE killing anything
+    $snapshot = @()
     foreach ($name in $targets) {
         $procs = Get-Process -Name $name -ErrorAction SilentlyContinue
-        foreach ($p in $procs) {
-            try {
-                $info = [PSCustomObject]@{
-                    Name = $p.ProcessName
-                    Id   = $p.Id
-                }
-                $p.Kill()
-                $killed += $info
-            } catch {}
+        if ($procs) {
+            foreach ($p in $procs) {
+                # Capture details BEFORE kill
+                $snapshot += Get-ProcessDetails -proc $p
+            }
         }
     }
 
-    return $killed
-}
-
-# ====== KILL REPORT WINDOW ======
-function Show-KillReportWindow {
-    param(
-        [Parameter(Mandatory)]
-        [System.Collections.IEnumerable]$Killed
-    )
-
-    $reportWindow                 = New-Object System.Windows.Window
-    $reportWindow.Title           = 'NullByte Purge Report'
-    $reportWindow.WindowStartupLocation = 'CenterScreen'
-    $reportWindow.Width           = 800
-    $reportWindow.Height          = 600
-    $reportWindow.Background      = 'Black'
-    $reportWindow.Foreground      = 'White'
-    $reportWindow.Topmost         = $true
-    $reportWindow.ResizeMode      = 'NoResize'
-
-    $root = New-Object System.Windows.Controls.Grid
-    $root.Margin = 20
-    $reportWindow.Content = $root
-
-    $root.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null # summary
-    $root.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null # list
-    $root.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null # button
-
-    # Summary
-    $edgeCount   = ($Killed | Where-Object { $_.Name -like 'msedge*' }).Count
-    $chromeCount = ($Killed | Where-Object { $_.Name -eq 'chrome' }).Count
-    $totalCount  = $Killed.Count
-
-    $summaryText = @"
-NUKE COMPLETE
-
-Total Processes Terminated: $totalCount
-
-- Edge (msedge / msedgewebview2): $edgeCount
-- Chrome: $chromeCount
-"@
-
-    $summaryBlock = New-Object System.Windows.Controls.TextBlock
-    $summaryBlock.Text                = $summaryText
-    $summaryBlock.FontSize            = 20
-    $summaryBlock.TextAlignment       = 'Left'
-    $summaryBlock.Margin              = '0,0,0,10'
-    $summaryBlock.TextWrapping        = 'Wrap'
-    [System.Windows.Controls.Grid]::SetRow($summaryBlock,0)
-    $root.Children.Add($summaryBlock) | Out-Null
-
-    # Detailed list
-    $listBox = New-Object System.Windows.Controls.ListBox
-    $listBox.Background = 'Black'
-    $listBox.Foreground = 'White'
-    $listBox.BorderBrush = 'Gray'
-    $listBox.FontFamily = 'Consolas'
-    $listBox.FontSize = 14
-
-    foreach ($item in $Killed) {
-        [void]$listBox.Items.Add(("{0,-20} PID {1}" -f $item.Name, $item.Id))
+    # Now kill using the snapshot PIDs
+    foreach ($item in $snapshot) {
+        try {
+            Stop-Process -Id $item.PID -Force -ErrorAction Stop
+        } catch {}
     }
 
-    [System.Windows.Controls.Grid]::SetRow($listBox,1)
-    $root.Children.Add($listBox) | Out-Null
+    # Store snapshot as final results (no duplicates, no nulls)
+    $Global:ProcessResults = $snapshot
 
-    # Close button
-    $closePanel = New-Object System.Windows.Controls.StackPanel
-    $closePanel.Orientation = 'Horizontal'
-    $closePanel.HorizontalAlignment = 'Center'
-    $closePanel.Margin = '0,10,0,0'
-    [System.Windows.Controls.Grid]::SetRow($closePanel,2)
-    $root.Children.Add($closePanel) | Out-Null
+    # Capture memory AFTER
+    $Global:AfterMemoryMB = Get-SystemMemoryUsageMB
+}
+# --- END CHUNK 7 ---
+# --- START CHUNK 8 ---
+function Show-ResultsWindow {
 
-    $btnClose = New-Object System.Windows.Controls.Button
-    $btnClose.Content        = 'Close'
-    $btnClose.Width          = 160
-    $btnClose.Height         = 40
-    $btnClose.FontSize       = 16
-    $btnClose.Background     = 'DarkRed'
-    $btnClose.Foreground     = 'White'
-    $btnClose.Margin         = '10'
-    $closePanel.Children.Add($btnClose) | Out-Null
+    $reportWindow                 = New-Object System.Windows.Window
+    $reportWindow.Title           = "NullByte Purge Results"
+    $reportWindow.Width           = 1024
+    $reportWindow.Height          = 768
+    $reportWindow.WindowStartupLocation = 'CenterScreen'
+    $reportWindow.ResizeMode      = 'CanResize'
+    $reportWindow.WindowStyle     = 'SingleBorderWindow'
+    $reportWindow.Topmost         = $false
+    $reportWindow.Background      = 'Black'
 
-    $btnClose.Add_Click({
-        $reportWindow.Close()
+    # Root grid
+    $rGrid = New-Object System.Windows.Controls.Grid
+    $reportWindow.Content = $rGrid
+
+    # Define rows
+    $rGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null  # Header
+    $rGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null  # Table
+    $rGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) | Out-Null  # Buttons
+
+    # ====== HEADER TEXT ======
+    $header = New-Object System.Windows.Controls.TextBlock
+    $header.Foreground          = 'Lime'
+    $header.FontSize            = 22
+    $header.TextAlignment       = 'Center'
+    $header.Margin              = '10'
+    $header.Text = @"
+NUKE COMPLETE
+
+Processes Killed: $($Global:ProcessResults.Count)
+Memory Before: $($Global:BeforeMemoryMB) MB
+Memory After:  $($Global:AfterMemoryMB) MB
+Memory Freed:  $([math]::Round(($Global:BeforeMemoryMB - $Global:AfterMemoryMB),2)) MB
+"@
+
+    [System.Windows.Controls.Grid]::SetRow($header,0)
+    $rGrid.Children.Add($header) | Out-Null
+
+    # ====== TABLE DISPLAY (MONOSPACE TEXTBOX) ======
+    $textBox = New-Object System.Windows.Controls.TextBox
+    $textBox.FontFamily          = 'Consolas'
+    $textBox.FontSize            = 14
+    $textBox.IsReadOnly          = $true
+    $textBox.TextWrapping        = 'NoWrap'
+    $textBox.VerticalScrollBarVisibility   = 'Auto'
+    $textBox.HorizontalScrollBarVisibility = 'Auto'
+    $textBox.Background          = 'Black'
+    $textBox.Foreground          = 'White'
+    $textBox.Margin              = '10'
+
+    # Build table header
+    $table = "ProcessName        PID     MemoryMB   CPUSeconds   StartTime              Path                          ParentPID`r`n"
+    $table += "---------------------------------------------------------------------------------------------------------------`r`n"
+
+    foreach ($item in $Global:ProcessResults) {
+
+        # ====== NULL-SAFE FIELDS ======
+
+        # StartTime
+        if ($item.StartTime) {
+            $start = $item.StartTime.ToString("yyyy-MM-dd HH:mm:ss")
+        } else {
+            $start = ""
+        }
+
+        # Path
+        if ($item.Path) {
+            $path = $item.Path
+        } else {
+            $path = ""
+        }
+
+        # ParentPID
+        if ($item.ParentPID) {
+            $parent = $item.ParentPID
+        } else {
+            $parent = ""
+        }
+
+        # ====== BUILD FORMATTED LINE ======
+        $line = "{0,-18} {1,-7} {2,-10} {3,-12} {4,-20} {5,-30} {6}" -f `
+            $item.ProcessName,
+            $item.PID,
+            $item.MemoryMB,
+            $item.CPUSeconds,
+            $start,
+            $path,
+            $parent
+
+        $table += $line + "`r`n"
+    }
+
+    $textBox.Text = $table
+
+    [System.Windows.Controls.Grid]::SetRow($textBox,1)
+    $rGrid.Children.Add($textBox) | Out-Null
+# --- END CHUNK 8 ---
+
+# --- START CHUNK 9 ---
+    # ====== COPY ALL BUTTON ======
+    $btnCopy = New-Object System.Windows.Controls.Button
+    $btnCopy.Content             = "Copy All (CSV)"
+    $btnCopy.Width               = 200
+    $btnCopy.Height              = 40
+    $btnCopy.FontSize            = 16
+    $btnCopy.Margin              = '10'
+    $btnCopy.HorizontalAlignment = 'Center'
+
+    # CSV builder (now matches table EXACTLY)
+    $btnCopy.Add_Click({
+        $csv = "ProcessName,PID,MemoryMB,CPUSeconds,StartTime,Path,ParentPID`r`n"
+
+        foreach ($item in $Global:ProcessResults) {
+
+            # Format StartTime exactly like the table
+            $start = ""
+            if ($item.StartTime) {
+                $start = $item.StartTime.ToString("yyyy-MM-dd HH:mm:ss")
+            }
+
+            # Escape commas in paths if needed
+            $path = $item.Path
+            if ($path -and $path.Contains(",")) {
+                $path = '"' + $path + '"'
+            }
+
+            $csv += "$($item.ProcessName),$($item.PID),$($item.MemoryMB),$($item.CPUSeconds),$start,$path,$($item.ParentPID)`r`n"
+        }
+
+        [System.Windows.Forms.Clipboard]::SetText($csv)
+        [System.Windows.MessageBox]::Show("CSV copied to clipboard.","Copied") | Out-Null
     })
+
+    [System.Windows.Controls.Grid]::SetRow($btnCopy,2)
+    $rGrid.Children.Add($btnCopy) | Out-Null
 
     $reportWindow.ShowDialog() | Out-Null
 }
+# --- END CHUNK 9 ---
+# --- START CHUNK 10 ---
+# ====== BUTTON EVENT HANDLERS ======
 
-# ====== BUTTON EVENTS ======
+# Cancel button closes the app immediately
 $btnCancel.Add_Click({
     $window.Close()
 })
 
+# "I Understand" triggers the nuke, closes main window, opens results
 $btnUnderstand.Add_Click({
-    # Disable buttons to prevent double-clicks
-    $btnUnderstand.IsEnabled = $false
-    $btnCancel.IsEnabled     = $false
+    try {
+        Invoke-Nuke
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "An error occurred during the purge.`n$_",
+            "Error",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+    }
 
-    # Perform kills
-    $killed = Invoke-NullByteKill
-
-    # Close main window and show report
-    $window.Hide()
-    Show-KillReportWindow -Killed $killed
+    # Close main window
     $window.Close()
-})
 
-# Run
+    # Show results window
+    Show-ResultsWindow
+})
+# --- END CHUNK 10 ---
+# --- START CHUNK 11 ---
+# ====== RUN THE MAIN WINDOW ======
 $window.ShowDialog() | Out-Null
+# --- END CHUNK 11 ---

@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="NullByte.png" alt="NullByte Logo" width="200">
+</p>
+
+[![Version](https://img.shields.io/badge/version-v1.1.0-blue)](https://github.com/Dardwizzle/NullByte-Toolbox-Windows-Utilities/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 # NullByte Toolbox – Windows Utilities Collection
 
 [![Download](https://img.shields.io/github/v/release/Dardwizzle/NullByte-Toolbox-Windows-Utilities?label=Download%20Latest&style=for-the-badge)](https://github.com/Dardwizzle/NullByte-Toolbox-Windows-Utilities/releases/latest)
@@ -22,8 +29,7 @@ Executable and PowerShell versions included.
 ---
 
 ## 📁 Project Structure
-D:\Dev\
-├── Repos\
+I:\Repositories\
 │     └── NullByte-Toolbox-Windows-Utilities\
 ├── Builds\
 ├── Assets\

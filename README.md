@@ -2,7 +2,7 @@
   <img src="NullByte.png" alt="NullByte Logo" width="200">
 </p>
 
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue)](https://github.com/Dardwizzle/NullByte-Toolbox-Windows-Utilities/releases)
+[![Version](https://img.shields.io/badge/version-v1.2.0-blue)](https://github.com/Dardwizzle/NullByte-Toolbox-Windows-Utilities/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 # NullByte Toolbox – Windows Utilities Collection
@@ -83,7 +83,7 @@ Powered by curiosity, caffeine, and the desire to make Windows behave.
 
 -----------------------------------------------------------------------
 
-## Planned Features (v1.1.0)
+## Planned Features (v1.3.0)
 
 ### **Verbose Mode (`-Verbose`)**
 Provides detailed output for transparency and debugging.

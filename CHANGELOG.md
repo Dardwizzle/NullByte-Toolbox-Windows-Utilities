@@ -2,9 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.1.0] – 2026-06-19
+## [v1.2.0] – 2026-06-19
 ### Changed
 - Replaced fullscreen window with standard Windows chrome (minimize/maximize/close)
+- Fixzed window so it was not locked to 'Always on top'
 - Improved process enumeration and error handling
 - Enhanced formatting for both table display and CSV output
 - Updated kill logic to store detailed pre-kill process metadata
